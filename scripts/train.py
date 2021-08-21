@@ -20,13 +20,15 @@ import gc
 from keras.utils import multi_gpu_model
 import pickle
 from main.config.create_config import load_dict
+from tensorflow.python import debug as tf_debug
+import pdb
 
 #global variables can be set by optional arguments
 #TODO: Makes proper variables in train() instead of global arguments.
-img_file = "img_train.txt"
-gt_file = "gt_train.txt"
+img_file = "../img_train.txt"
+gt_file = "../gt_train.txt"
 log_dir_name = './log'
-init_file = "imagenet.h5"
+init_file = "../main/model/imagenet.h5"
 EPOCHS = 100
 STEPS = None
 OPTIMIZER = "default"
@@ -35,8 +37,9 @@ GPUS = 1
 PRINT_TIME = 0
 REDUCELRONPLATEAU = True
 VERBOSE=False
+DEBUG=False
 
-CONFIG = "squeeze.config"
+CONFIG = "../main/config/squeeze.config"
 
 
 def train():
@@ -175,7 +178,7 @@ def train():
     tbCallBack = TensorBoard(log_dir=tb_dir, histogram_freq=0,
                              write_graph=True, write_images=True)
 
-    cb.append(tbCallBack)
+#    cb.append(tbCallBack)
 
     #if flag was given, add reducelronplateu callback
     if REDUCELRONPLATEAU:
@@ -188,6 +191,11 @@ def train():
     #print keras model summary
     if VERBOSE:
         print(squeeze.model.summary())
+        
+    if DEBUG:
+        sess = K.get_session()
+        sess = tf_debug.LocalCLIDebugWrapperSession(sess)
+        K.set_session(sess)
 
     if init_file != "none":
 
@@ -214,7 +222,7 @@ def train():
 
     #create train generator
     train_generator = generator_from_data_path(img_names, gt_names, config=cfg)
-
+    
     #make model parallel if specified
     if GPUS > 1:
 
@@ -254,6 +262,7 @@ def train():
         squeeze.model.compile(optimizer=opt,
                               loss=[squeeze.loss], metrics=[squeeze.loss_without_regularization, squeeze.bbox_loss, squeeze.class_loss, squeeze.conf_loss])
 
+#        pdb.set_trace()
         #actually do the training
         squeeze.model.fit_generator(train_generator, epochs=EPOCHS,
                                         steps_per_epoch=nbatches_train, callbacks=cb)
@@ -281,6 +290,7 @@ if __name__ == "__main__":
     parser.add_argument("--reducelr", type=bool, help="Add ReduceLrOnPlateu callback to training. DEFAULT: True")
     parser.add_argument("--verbose", type=bool,  help="Prints additional information. DEFAULT: False")
     parser.add_argument("--config",   help="Dictionary of all the hyperparameters. DEFAULT: squeeze.config")
+    parser.add_argument("--debug",   help="Run the TensorFlow debug process tfdbg")
 
     args = parser.parse_args()
 
@@ -310,5 +320,7 @@ if __name__ == "__main__":
         VERBOSE=args.verbose
     if args.config is not None:
         CONFIG = args.config
+    if args.debug is not None:
+        DEBUG=True
 
     train()

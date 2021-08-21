@@ -22,21 +22,21 @@ from main.config.create_config import load_dict
 
 #default values for some variables
 #TODO: uses them as proper parameters instead of global variables
-img_file = "img_val.txt"
-gt_file = "gt_val.txt"
-img_file_test = "img_test.txt"
-gt_file_test = "gt_test.txt"
+img_file = "../img_val.txt"
+gt_file = "../gt_val.txt"
+img_file_test = "../img_test.txt"
+gt_file_test = "../gt_test.txt"
 log_dir_name = "./log"
 checkpoint_dir = './log/checkpoints'
 tensorboard_dir = './log/tensorboard_val'
 tensorboard_dir_test = './log/tensorboard_test'
 TIMEOUT = 20
 EPOCHS = 100
-CUDA_VISIBLE_DEVICES = "1"
+CUDA_VISIBLE_DEVICES = "0"
 steps = None
 GPUS = 1
 STARTWITH = None
-CONFIG = "squeeze.config"
+CONFIG = "../main/config/squeeze.config"
 TESTING = False
 
 
@@ -359,7 +359,7 @@ def eval():
 
 
                 #compute precision recall and mean average precision
-                precision, recall, f1,  AP = evaluate(model=model, generator=val_generator_2, steps=nbatches_valid, config=cfg)
+                precision, recall, f1,  AP, boxes = evaluate(model=model, generator=val_generator_2, steps=nbatches_valid, config=cfg)
 
                 #create feed dict for visualization
                 prmap_feed_dict = {}
@@ -370,6 +370,8 @@ def eval():
                     prmap_feed_dict[AP_placeholders[i]] = AP[i,1]
                     prmap_feed_dict[f1_placeholders[i]] = f1[i]
 
+#                    line += "{};{};{};{}".format( precision[i], recall[i],AP[i,1],f1[i])
+                    
                     line += "{};{};{};{}".format( precision[i], recall[i],AP[i,1],f1[i])
 
 
@@ -636,7 +638,7 @@ def eval():
 
 
             #compute precision recall and mean average precision
-            precision, recall, f1,  AP = evaluate(model=model, generator=val_generator_2, steps=nbatches_test, config=cfg)
+            precision, recall, f1,  AP, boxes = evaluate(model=model, generator=val_generator_2, steps=nbatches_test, config=cfg)
 
             #create feed dict for visualization
             prmap_feed_dict = {}
