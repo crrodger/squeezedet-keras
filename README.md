@@ -1,9 +1,31 @@
-# SqueezeDet on Keras #
+# SqueezeDet on Keras + pothole spotting :-) #
 
+# Setup environment #
+1. This was run using python 3.6.14 (especially critical if you want to use a GPU) - used pyenv to create virtualenv for it
+2. Install from requirements.txt
+
+## Notes for Pothole spotting 
+
+1.  Extract images from video using VideoToFrams.py in scripts directory (configure using variables) - if you have a video source
+2.  Check the config_roads_new.py file has the right image size. Also check that the ANCHORS_HEIGHT and WIDTH are 1/16 of the image width and height
+3.  Tag images using labelimg in Yolo format into directory "image_labels"
+4.  Move resized images to correct location in image_inputs directory
+5.  Update images_new.txt file in root to contain the images for which the tagging is complete (it is a list of all the images for the project)
+6.  Run create_config_roads_new.py 
+7.  Run train_val_split_roads script to generate test/train/val files (img and gt)
+8.  Copy the train/val/split files to root location in application
+9.  Check f() load_annotation_yolo in dataGenerator.py for correct label to obj[0] (line 450 & 121)
+10.  Run train.py
+11. Run eval.py (make sure tensorbaord not running - locks output directory content)
+12. Run tensorboard --logdir ./log from within scripts directory (while eval is running) to see progress on tensorboard (machine-name:6006)
+
+The content below is from the original project README, cannot vouch for it.
+
+See this site for guidance on image sizes and configuring the scripts
 ## _SqueezeDet:_ Unified, Small, Low Power Fully Convolutional Neural Networks for Real-Time Object Detection for Autonomous Driving
 By Bichen Wu, Alvin Wan, Forrest Iandola, Peter H. Jin, Kurt Keutzer (UC Berkeley & DeepScale)
 
-This repository contains a Keras implementation of SqueezeDet, a convolutional neural network based object detector described in this paper: https://arxiv.org/abs/1612.01051. The original implementation can be found [here](https://github.com/BichenWuUCB/squeezeDet). If you find this work useful for your research, please consider citing:
+This repository contains a Keras implementation of SqueezeDet, a convolutional neural network based object detector described in this paper: https://arxiv.org/abs/1612.01051. If you find this work useful for your research, please consider citing:
 
     @inproceedings{squeezedet,
         Author = {Bichen Wu and Forrest Iandola and Peter H. Jin and Kurt Keutzer},
