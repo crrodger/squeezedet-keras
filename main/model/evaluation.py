@@ -66,7 +66,7 @@ def evaluate(model, generator, steps, config):
     print("    Computing statistics...")
     precision, recall, f1,  APs = compute_statistics(all_boxes, all_classes, all_scores, all_gts,  config)
 
-    return precision, recall, f1, APs
+    return precision, recall, f1, APs, boxes
 
 
 def filter_batch( y_pred,config):
@@ -383,37 +383,40 @@ def AP( predictions, scores):
             #count gts
             N = len(npos)
 
-            #compute the precisions at every gt
-            nprec = np.arange(1,N+1) / (np.array(npos)+1)
-
-            #store the mean
-            ap[i, 0] = np.mean(nprec)
-
-            #interpolated precisions
-            inprec =  np.zeros_like(nprec)
-
-            #maximum
-            mx = nprec[-1]
-
-            inprec[-1] = mx
-
-            #go backwards through precisions and check if current precision is bigger than last max
-            for j in range(len(npos)-2, -1, -1):
-
-                if nprec[j] > mx:
-                    mx = nprec[j]
-                inprec[j] = mx
-
-            #mean of interpolated precisions
-            ap[i,1] = np.mean(inprec)
-
-
-            #get 11 indices
-            idx =  (np.concatenate( (np.zeros((1)), np.maximum(np.zeros(10), np.around((N-1)/(10) * np.arange(1,11))-1)))).astype(int)
-
-
-            iprec += inprec[idx]
-            prec += nprec[idx]
+            #CER
+            if N > 0:
+                
+                #compute the precisions at every gt
+                nprec = np.arange(1,N+1) / (np.array(npos)+1)
+    
+                #store the mean
+                ap[i, 0] = np.mean(nprec)
+    
+                #interpolated precisions
+                inprec =  np.zeros_like(nprec)
+    
+                #maximum
+                mx = nprec[-1]
+    
+                inprec[-1] = mx
+    
+                #go backwards through precisions and check if current precision is bigger than last max
+                for j in range(len(npos)-2, -1, -1):
+    
+                    if nprec[j] > mx:
+                        mx = nprec[j]
+                    inprec[j] = mx
+    
+                #mean of interpolated precisions
+                ap[i,1] = np.mean(inprec)
+    
+    
+                #get 11 indices
+                idx =  (np.concatenate( (np.zeros((1)), np.maximum(np.zeros(10), np.around((N-1)/(10) * np.arange(1,11))-1)))).astype(int)
+    
+    
+                iprec += inprec[idx]
+                prec += nprec[idx]
 
 
     return ap, prec / len(predictions), iprec / len(predictions)

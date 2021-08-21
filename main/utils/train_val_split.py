@@ -12,8 +12,8 @@ import argparse
 
 
 
-def train_eval_split(img_file =  "images.txt" ,
-                    gt_file =  "labels.txt"
+def train_eval_split(img_file =  "../../images.txt" ,
+                    gt_file =  "../../labels.txt"
                     , percent_train = 80, percent_val = 20, percent_test = 0):
     """Given a two files containing the list of images and ground truth , create a single datasplit
     
@@ -121,8 +121,8 @@ if __name__ == "__main__":
 
 
 
-    img_file = "images.txt"
-    gt_file = "labels.txt"
+    img_file = "../../images.txt"
+    gt_file = "../../labels.txt"
 
 
     if args.img is not None:

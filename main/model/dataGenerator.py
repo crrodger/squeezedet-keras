@@ -10,6 +10,7 @@ import cv2
 import numpy as np
 import random
 from main.utils.utils import bbox_transform_inv, batch_iou, sparse_to_dense
+
 class threadsafe_iter:
     """Takes an iterator/generator and makes it thread-safe by
     serializing call to the `next` method of given iterator/generator.
@@ -64,6 +65,11 @@ def read_image_and_gt(img_files, gt_files, config):
         for line in lines:
             obj = line.strip().split(' ')
 
+            if obj[0] == '15':
+                obj[0] = 'road_fault_minor'
+            if obj[0] == '16':
+                obj[0] = 'road_fault'
+
             #get class, if class is not in listed, skip it
             try:
                 cls = config.CLASS_TO_IDX[obj[0].lower().strip()]
@@ -95,6 +101,70 @@ def read_image_and_gt(img_files, gt_files, config):
                 continue
         return annotations
 
+    #loads annotations from file
+    def load_annotation_yolo(gt_file):
+
+        # import pdb;pdb.set_trace()
+        with open(gt_file, 'r') as f:
+            lines = f.readlines()
+        f.close()
+
+        annotations = []
+
+        #each line is an annotation bounding box
+        for line in lines:
+            obj = line.strip().split(' ')
+
+            if obj[0] == '0':
+                obj[0] = 'water_pothole'
+#            if obj[0] == '16':
+#                obj[0] = 'road_fault'
+#            if obj[0] == '0':
+#                obj[0] = 'traffic_light'
+
+            #get class, if class is not in listed, skip it
+            try:
+                cls = config.CLASS_TO_IDX[obj[0].lower().strip()]
+                # print cls
+
+
+                #get coordinates
+                xcen = float(obj[1])
+                ycen = float(obj[2])
+                wdth = float(obj[3])
+                hght = float(obj[4])
+                
+                xmin = float((xcen - (wdth/2)) * config.IMAGE_WIDTH)
+                xmax = float((xcen + (wdth/2)) * config.IMAGE_WIDTH)
+                ymin = float((ycen - (hght/2)) * config.IMAGE_HEIGHT)
+                ymax = float((ycen + (hght/2)) * config.IMAGE_HEIGHT)
+                
+#                xmin = float(obj[4])
+#                ymin = float(obj[5])
+#                xmax = float(obj[6])
+#                ymax = float(obj[7])
+
+
+                #check for valid bounding boxes
+                assert xmin >= 0.0 and xmin <= xmax, \
+                    'Invalid bounding box x-coord xmin {} or xmax {} at {}' \
+                        .format(xmin, xmax, gt_file)
+                assert ymin >= 0.0 and ymin <= ymax, \
+                    'Invalid bounding box y-coord ymin {} or ymax {} at {}' \
+                        .format(ymin, ymax, gt_file)
+
+
+                #transform to  point + width and height representation
+                x, y, w, h = bbox_transform_inv([xmin, ymin, xmax, ymax])
+
+                annotations.append([x, y, w, h, cls])
+
+            except:
+                continue
+        return annotations
+
+
+
     #init tensor of images
     imgs = np.zeros((config.BATCH_SIZE, config.IMAGE_HEIGHT, config.IMAGE_WIDTH, config.N_CHANNELS))
 
@@ -105,6 +175,7 @@ def read_image_and_gt(img_files, gt_files, config):
 
 
         #open img
+#        print(img_name)
         img = cv2.imread(img_name).astype(np.float32, copy=False)
 
 
@@ -120,7 +191,9 @@ def read_image_and_gt(img_files, gt_files, config):
 
         #print(orig_h, orig_w)
         # load annotations
-        annotations = load_annotation(gt_name)
+#        pdb.set_trace()
+        annotations = load_annotation_yolo(gt_name)
+#        annotations = load_annotation(gt_name)
 
 
         #split in classes and boxes
@@ -179,6 +252,7 @@ def read_image_and_gt(img_files, gt_files, config):
         img_idx += 1
 
 
+#        pdb.set_trace()
         # scale annotation
         x_scale = config.IMAGE_WIDTH / orig_w
         y_scale = config.IMAGE_HEIGHT / orig_h
@@ -366,6 +440,66 @@ def read_image_and_gt_with_original(img_files, gt_files, config):
                 continue
         return annotations
 
+    #loads annotations from file
+    def load_annotation_yolo(gt_file):
+
+        with open(gt_file, 'r') as f:
+            lines = f.readlines()
+        f.close()
+
+        annotations = []
+
+        #each line is an annotation bounding box
+        for line in lines:
+            obj = line.strip().split(' ')
+
+#            if obj[0] == '0':
+#                obj[0] = 'traffic_light'
+            if obj[0] == '0':
+                obj[0] = 'water_pothole'
+
+            #get class, if class is not in listed, skip it
+            try:
+                cls = config.CLASS_TO_IDX[obj[0].lower().strip()]
+                # print cls
+
+
+                #get coordinates
+                xcen = float(obj[1])
+                ycen = float(obj[2])
+                wdth = float(obj[3])
+                hght = float(obj[4])
+                
+                xmin = float((xcen - (wdth/2)) * config.IMAGE_WIDTH)
+                xmax = float((xcen + (wdth/2)) * config.IMAGE_WIDTH)
+                ymin = float((ycen - (hght/2)) * config.IMAGE_HEIGHT)
+                ymax = float((ycen + (hght/2)) * config.IMAGE_HEIGHT)
+                
+#                xmin = float(obj[4])
+#                ymin = float(obj[5])
+#                xmax = float(obj[6])
+#                ymax = float(obj[7])
+
+
+                #check for valid bounding boxes
+                assert xmin >= 0.0 and xmin <= xmax, \
+                    'Invalid bounding box x-coord xmin {} or xmax {} at {}' \
+                        .format(xmin, xmax, gt_file)
+                assert ymin >= 0.0 and ymin <= ymax, \
+                    'Invalid bounding box y-coord ymin {} or ymax {} at {}' \
+                        .format(ymin, ymax, gt_file)
+
+
+                #transform to  point + width and height representation
+                x, y, w, h = bbox_transform_inv([xmin, ymin, xmax, ymax])
+
+                annotations.append([x, y, w, h, cls])
+
+            except:
+                continue
+        return annotations
+
+
     imgs = np.zeros((config.BATCH_SIZE, config.IMAGE_HEIGHT, config.IMAGE_WIDTH, config.N_CHANNELS))
     imgs_only_resized = np.zeros((config.BATCH_SIZE, config.IMAGE_HEIGHT, config.IMAGE_WIDTH, config.N_CHANNELS))
 
@@ -394,7 +528,8 @@ def read_image_and_gt_with_original(img_files, gt_files, config):
 
         #print(orig_h, orig_w)
         # load annotations
-        annotations = load_annotation(gt_name)
+#        annotations = load_annotation(gt_name)
+        annotations = load_annotation_yolo(gt_name)
 
 
         #split in classes and boxes
